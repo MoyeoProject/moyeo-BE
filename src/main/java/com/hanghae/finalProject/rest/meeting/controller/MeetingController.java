@@ -68,13 +68,6 @@ public class MeetingController {
         return DataResponseDto.of(meetingService.createMeeting(requestDto), Code.CREATE_MEETING.getStatusMsg());
     }
     
-    @ApiOperation (value = "모임 생성temp")
-    @PostMapping("/temp")
-    public ResponseDto createMeetingTemp(@RequestPart @Valid MeetingRequestDto requestDto,
-                                         @RequestPart(required = false) MultipartFile image) throws IOException {
-        return DataResponseDto.of(meetingService.createMeetingTemp(requestDto, image), Code.CREATE_MEETING.getStatusMsg());
-    }
-    
     @ApiOperation (value = "모임 수정")
     @PatchMapping("/{id}")
     public ResponseDto updateAllMeeting(@PathVariable Long id, @ModelAttribute @Valid MeetingUpdateRequestDto requestDto) throws IOException{

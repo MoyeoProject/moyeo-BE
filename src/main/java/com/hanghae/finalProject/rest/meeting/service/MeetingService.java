@@ -70,7 +70,7 @@ public class MeetingService {
      public MeetingCreateResponseDto createMeeting(MeetingRequestDto requestDto) throws IOException {
           // 유저 확인
           User user = SecurityUtil.getCurrentUser();
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
+          forLoggedUser(user);
           //이미지 데이터 넣기
           String image = null;
           //이미지가 있으면 넣어주고 없으면 넘어가는 if문
@@ -78,11 +78,8 @@ public class MeetingService {
                image = s3Uploader.upload(requestDto.getImage(), "image");
           }
           // 비밀방일경우 비번4글자 확인
-          if (requestDto.isSecret()) {
-               if (requestDto.getPassword().length() != 4) {
-                    throw new RestApiException(Code.WRONG_SECRET_PASSWORD);
-               }
-          }
+          checkPassword(requestDto.isSecret(), requestDto.getPassword());
+          
           Meeting meeting = meetingRepository.saveAndFlush(new Meeting(requestDto, user, image));
           
           // 참석자리스트에 방장 추가
@@ -94,45 +91,16 @@ public class MeetingService {
           
           return new MeetingCreateResponseDto(meeting);
      }
-
-     // 모임생성 temp
-     @Transactional
-     public MeetingCreateResponseDto createMeetingTemp(MeetingRequestDto requestDto, MultipartFile file) throws IOException {
-          User user = SecurityUtil.getCurrentUser();
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
-          //이미지 데이터 넣기
-          String image = null;
-          //이미지가 있으면 넣어주고 없으면 넘어가는 if문
-          if (!file.isEmpty() && !file.getContentType().isEmpty()) {
-               image = s3Uploader.upload(file, "image");
-          }
-          // 비밀방일경우 비번4글자 확인
-          if (requestDto.isSecret()) {
-               if (requestDto.getPassword().length() != 4) {
-                    throw new RestApiException(Code.WRONG_SECRET_PASSWORD);
-               }
-          }
-          Meeting meeting = meetingRepository.saveAndFlush(new Meeting(requestDto, user, image));
-          
-          // 참석자리스트에 방장 추가
-          Attendant attendant = new Attendant(meeting, user);
-          attendantRepository.save(attendant);
-          
-          return new MeetingCreateResponseDto(meeting);
-     }
      
      // 모임수정
      @Transactional
      public void updateAllMeeting(Long id, MeetingUpdateRequestDto requestDto) throws IOException {
           //유저 확인
           User user = SecurityUtil.getCurrentUser();
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
+          forLoggedUser(user);
           // 비밀방일경우 비번4글자 확인
-          if (requestDto.isSecret()) {
-               if (requestDto.getPassword().length() != 4) {
-                    throw new RestApiException(Code.WRONG_SECRET_PASSWORD);
-               }
-          }
+          checkPassword(requestDto.isSecret(), requestDto.getPassword());
+          
           Meeting meeting = meetingRepository.findById(id).orElseThrow(() -> new RestApiException(Code.NO_MEETING));
           LocalDate dateOrigin = meeting.getStartDate();
           // 모임 글 삭제 여부 확인
@@ -146,17 +114,21 @@ public class MeetingService {
                image = s3Uploader.upload(requestDto.getImage(), "image");
           }
           // 글 작성자과 일치 여부 확인
-          if (user.getId() == meeting.getUser().getId()) {
+          if (Objects.equals(user.getId(), meeting.getUser().getId())) {
                meeting.updateAll(requestDto, image);
-               List<Attendant> attendantList = attendantRepository.findAllByMeeting(meeting).stream()
-                    // 캘린더 캐시데이터 삭제
-                    .peek(
-                         a -> getSpringProxy().deleteCache(a.getUser().getId(), dateOrigin.getYear(), dateOrigin.getMonthValue())
-                    ).collect(Collectors.toList());
+               removeCache(meeting, dateOrigin);
                // 알림
                alarmService.alarmUpdateMeeting(meeting);
           } else {
                throw new RestApiException(Code.INVALID_USER);
+          }
+     }
+     
+     private static void checkPassword(boolean isSecret, String requestDto) {
+          if (isSecret) {
+               if (requestDto.length() != 4) {
+                    throw new RestApiException(Code.WRONG_SECRET_PASSWORD);
+               }
           }
      }
      
@@ -165,8 +137,8 @@ public class MeetingService {
      public void updateMeetingImage(Long id, MeetingUpdateRequestDto.Image requestDto) throws IOException {
           // 유저 확인
           User user = SecurityUtil.getCurrentUser();
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
-          
+          forLoggedUser(user);
+     
           Meeting meeting = meetingRepository.findById(id).orElseThrow(() -> new RestApiException(Code.NO_MEETING));
           LocalDate dateOrigin = meeting.getStartDate();
           if (meeting.isDeleted()) {
@@ -179,16 +151,24 @@ public class MeetingService {
                image = s3Uploader.upload(requestDto.getImage(), "image");
           }
           // 방장일경우만 가능
-          if (user.getId() == meeting.getUser().getId()) {
+          if (Objects.equals(user.getId(), meeting.getUser().getId())) {
                meeting.updateImage(image);
                // 캘린더 캐시데이터 삭제
-               List<Attendant> attendantList = attendantRepository.findAllByMeeting(meeting).stream()
-                    .peek(
-                         a -> getSpringProxy().deleteCache(a.getUser().getId(), dateOrigin.getYear(), dateOrigin.getMonthValue())
-                    ).collect(Collectors.toList());
+               removeCache(meeting, dateOrigin);
           } else {
                throw new RestApiException(Code.INVALID_USER);
           }
+     }
+     
+     private void removeCache(Meeting meeting, LocalDate dateOrigin) {
+          List<Attendant> attendantList = attendantRepository.findAllByMeeting(meeting).stream()
+               .peek(
+                    a -> getSpringProxy().deleteCache(a.getUser().getId(), dateOrigin.getYear(), dateOrigin.getMonthValue())
+               ).collect(Collectors.toList());
+     }
+     
+     private static void forLoggedUser(User user) {
+          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
      }
      
      
@@ -197,8 +177,8 @@ public class MeetingService {
      public MeetingUpdatePageResponseDto getUpdatePage(Long id) {
           // 유저 확인
           User user = SecurityUtil.getCurrentUser();
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
-
+          forLoggedUser(user);
+     
           // 모임 글 존재 여부 확인
           Meeting meeting = meetingRepository.findById(id).orElseThrow(() -> new RestApiException(Code.NO_MEETING));
 
@@ -220,8 +200,8 @@ public class MeetingService {
      public void updateLink(Long id, MeetingLinkRequestDto requestDto) {
           // 유저 확인
           User user = SecurityUtil.getCurrentUser();
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
-
+          forLoggedUser(user);
+     
           // 모임 글 존재 여부 확인
           Meeting meeting = meetingRepository.findById(id).orElseThrow(() -> new RestApiException(Code.NO_MEETING));
 
@@ -246,7 +226,7 @@ public class MeetingService {
      public void deleteMeeting(Long id) {
           // 유저 확인
           User user = SecurityUtil.getCurrentUser();
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
+          forLoggedUser(user);
           // 모임 존재 여부 확인
           Meeting meeting = meetingRepository.findById(id).orElseThrow(() -> new RestApiException(Code.NO_MEETING));
           // 삭제 여부 확인
@@ -268,8 +248,8 @@ public class MeetingService {
      @Transactional (readOnly = true)
      public MeetingListResponseDto getMeetings(String sortBy, CategoryCode category, Long meetingIdx) {
           User user = SecurityUtil.getCurrentUser(); // 비회원일경우(토큰못받았을경우) null
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
-          
+          forLoggedUser(user);
+     
           MeetingListResponseDto response = new MeetingListResponseDto();
           List<MeetingListResponseDto.ResponseDto> responseDtoList = (sortBy.equals("new")) ?
                meetingRepository.findAllSortByNewAndCategory(category, meetingIdx) // 신규순
@@ -307,25 +287,10 @@ public class MeetingService {
      @Transactional (readOnly = true)
      public MeetingListResponseDto getMeetingsBySearch(String search, CategoryCode category, Long meetingId) {
           User user = SecurityUtil.getCurrentUser(); // 비회원일경우(토큰못받았을경우) null
-          if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
-          
+          forLoggedUser(user);
+     
           MeetingListResponseDto response = new MeetingListResponseDto();
           response.addMeetingList(refactorResponseDtoList(user, meetingRepository.findAllBySearchAndCategory(search, category, meetingId)));
-//          response.addMeetingList(meetingRepository.findAllBySearchAndCategory(search, category, meetingId).stream()
-//               // meeting 작성자의 id와 로그인 유저의 아이디 비교
-//               .peek(m -> {
-//                    // master 처리 ,attendantsNum 처리,
-//                    m.setMaster(m.getMasterId().equals(user.getId()));
-//                    if (m.getAttendantsList().size() == 1 && m.getAttendantsList().get(0).getUserId() == null) {
-//                         // getAttendantsList 안에 null인 경우도 넘어와서 객체 생겨버림
-//                         m.setAttendantsList(null);
-//                         m.setAttendantsNum(0);
-//                    } else {
-//                         // 로그인유저의 참석유무
-//                         m.setAttend(m.getAttendantsList().stream().anyMatch(a -> a.getUserId().equals(user.getId())));
-//                         m.setAttendantsNum(m.getAttendantsList().size());
-//                    }
-//               }).collect(Collectors.toList()));
           return response;
      }
      
