@@ -28,7 +28,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -276,23 +275,7 @@ public class MeetingService {
                meetingRepository.findAllSortByNewAndCategory(category, meetingIdx) // 신규순
                : meetingRepository.findAllSortByPopularAndCategory(category, meetingIdx); // 인기순
           
-          responseDtoList = responseDtoList.stream()
-               // meeting 작성자의 id와 로그인 유저의 아이디 비교
-               .peek(m -> {
-                    // master 처리
-                    m.setMaster(m.getMasterId().equals(user.getId()));
-                    // attendantsNum 처리,
-                    // getAttendantsList 안에 null인 경우도 넘어와서 객체 생겨버림
-                    if (m.getAttendantsList().size() == 1 && m.getAttendantsList().get(0).getUserId() == null) {
-                         m.setAttendantsList(null);
-                         m.setAttendantsNum(0);
-                    } else {
-                         // 총 참석인원
-                         m.setAttendantsNum(m.getAttendantsList().size());
-                         // 참석자리스트에 로그인유저가 있는가
-                         m.setAttend(m.getAttendantsList().stream().anyMatch(a -> a.getUserId().equals(user.getId())));
-                    }
-               }).collect(Collectors.toList());
+          responseDtoList = refactorResponseDtoList(user, responseDtoList);
           
           // 인기순일 경우 : 재정렬 필요 > 인기순 + 마감날짜빠른순 + 최신순
           if (sortBy.equals("popular")) {
@@ -301,8 +284,23 @@ public class MeetingService {
                     .thenComparing(MeetingListResponseDto.ResponseDto::getId).reversed()).collect(Collectors.toList()
                );
           }
-          
           return response.addMeetingList(responseDtoList);
+     }
+     
+     private static List<MeetingListResponseDto.ResponseDto> refactorResponseDtoList(User user, List<MeetingListResponseDto.ResponseDto> responseDtoList) {
+          return responseDtoList.stream()
+               // meeting 작성자의 id와 로그인 유저의 아이디 비교
+               .peek(m -> {
+                    // master 처리
+                    m.setMaster(m.getMasterId().equals(user.getId()));
+                    // getAttendantsList 안에 null인 경우도 넘어와서 객체 생겨버림
+                    if (m.getAttendantsNum()== 0) {
+                         m.setAttendantsList(null);
+                    } else {
+                         // 참석자리스트에 로그인유저가 있는가
+                         m.setAttend(m.getAttendantsList().stream().anyMatch(a -> a.getUserId().equals(user.getId())));
+                    }
+               }).collect(Collectors.toList());
      }
      
      // 제목 검색 모임리스트 불러오기
@@ -312,21 +310,22 @@ public class MeetingService {
           if (user == null) throw new RestApiException(Code.NOT_FOUND_AUTHORIZATION_IN_SECURITY_CONTEXT);
           
           MeetingListResponseDto response = new MeetingListResponseDto();
-          response.addMeetingList(meetingRepository.findAllBySearchAndCategory(search, category, meetingId).stream()
-               // meeting 작성자의 id와 로그인 유저의 아이디 비교
-               .peek(m -> {
-                    // master 처리 ,attendantsNum 처리,
-                    m.setMaster(m.getMasterId().equals(user.getId()));
-                    if (m.getAttendantsList().size() == 1 && m.getAttendantsList().get(0).getUserId() == null) {
-                         // getAttendantsList 안에 null인 경우도 넘어와서 객체 생겨버림
-                         m.setAttendantsList(null);
-                         m.setAttendantsNum(0);
-                    } else {
-                         // 로그인유저의 참석유무
-                         m.setAttend(m.getAttendantsList().stream().anyMatch(a -> a.getUserId().equals(user.getId())));
-                         m.setAttendantsNum(m.getAttendantsList().size());
-                    }
-               }).collect(Collectors.toList()));
+          response.addMeetingList(refactorResponseDtoList(user, meetingRepository.findAllBySearchAndCategory(search, category, meetingId)));
+//          response.addMeetingList(meetingRepository.findAllBySearchAndCategory(search, category, meetingId).stream()
+//               // meeting 작성자의 id와 로그인 유저의 아이디 비교
+//               .peek(m -> {
+//                    // master 처리 ,attendantsNum 처리,
+//                    m.setMaster(m.getMasterId().equals(user.getId()));
+//                    if (m.getAttendantsList().size() == 1 && m.getAttendantsList().get(0).getUserId() == null) {
+//                         // getAttendantsList 안에 null인 경우도 넘어와서 객체 생겨버림
+//                         m.setAttendantsList(null);
+//                         m.setAttendantsNum(0);
+//                    } else {
+//                         // 로그인유저의 참석유무
+//                         m.setAttend(m.getAttendantsList().stream().anyMatch(a -> a.getUserId().equals(user.getId())));
+//                         m.setAttendantsNum(m.getAttendantsList().size());
+//                    }
+//               }).collect(Collectors.toList()));
           return response;
      }
      
