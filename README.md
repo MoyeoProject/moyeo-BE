@@ -1,4 +1,4 @@
- <img width="180" alt="짤방" src="https://blog.kakaocdn.net/dn/MFfKe/btrZa2ei4oG/yfksBvTWbCUXsS04cXfOD1/img.gif"> 
+ <img width="250" alt="짤방" src="https://blog.kakaocdn.net/dn/MFfKe/btrZa2ei4oG/yfksBvTWbCUXsS04cXfOD1/img.gif"> 
 
 # 모여 | Moyeo
 
