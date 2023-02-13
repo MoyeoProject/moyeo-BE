@@ -1,4 +1,4 @@
- <img width="380" alt="짤방" src="https://blog.kakaocdn.net/dn/dxFiGb/btrYJZBsIJF/TmFIqb6I8u6hKqRR2gupN1/img.gif"> 
+ <img width="180" alt="짤방" src="https://blog.kakaocdn.net/dn/MFfKe/btrZa2ei4oG/yfksBvTWbCUXsS04cXfOD1/img.gif"> 
 
 # 모여 | Moyeo
 
@@ -6,9 +6,9 @@
 메타버스의 시대가 펼쳐지면서 방구석 모임이 늘어났습니다. <br />
 좋아하는 취미생활을 방구석에서 공유하고 싶은 사람들을 위한 모임 <br />
 
- <img width="784" alt="스크린샷_20221229_051305" src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FUEwjn%2FbtrX6oXDnJL%2FpzzdRMhRRWjHKeHKvgyfKk%2Fimg.png">
-  <img width="784" alt="스크린샷_20221229_051305" src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbKB0ev%2FbtrYaphpRsY%2FvmkAdPoobKpkL5kNNiWOeK%2Fimg.png">
-   <img width="784" alt="스크린샷_20221229_051305" src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fb7jduA%2FbtrYidNXHRK%2F4rqYbRnbuM0xiEmmJGruzK%2Fimg.png">
+ <img width="650" alt="스크린샷_20221229_051305" src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FUEwjn%2FbtrX6oXDnJL%2FpzzdRMhRRWjHKeHKvgyfKk%2Fimg.png">
+  <img width="650" alt="스크린샷_20221229_051305" src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FbKB0ev%2FbtrYaphpRsY%2FvmkAdPoobKpkL5kNNiWOeK%2Fimg.png">
+   <img width="650" alt="스크린샷_20221229_051305" src="https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fb7jduA%2FbtrYidNXHRK%2F4rqYbRnbuM0xiEmmJGruzK%2Fimg.png">
  
 ### 🔗 배포 링크 Hosting URL
 
