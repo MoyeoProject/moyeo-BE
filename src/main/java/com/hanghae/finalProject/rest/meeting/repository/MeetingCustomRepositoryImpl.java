@@ -236,6 +236,7 @@ public class MeetingCustomRepositoryImpl implements MeetingCustomRepository {
                     meeting.secret,
                     meeting.password,
                     meeting.image,
+                    meeting.attendantsNum,
                     list(
                          Projections.fields(
                               AttendantResponseDto.simpleResponseDto.class,
